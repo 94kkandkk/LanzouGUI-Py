@@ -214,42 +214,55 @@ MIT License
 
 本项目的开发参考了以下优秀开源项目，在此向所有原作者表示感谢：
 
-### 参考项目
+### 👨‍💻 感谢的开源作者
 
-1. **lanzouyun-disk**
-   - 项目地址：https://github.com/chenhb23/lanzouyun-disk
-   - 作者：<img src="https://github.com/chenhb23.png" width="20" height="20" align="absmiddle" /> [@chenhb23](https://github.com/chenhb23)
-   - 参考内容：学习了蓝奏云的 Web 交互原理，包括 API 调用方式和请求参数构造
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/chenhb23.png" width="100" height="100" style="border-radius: 50%; border: 3px solid #4CAF50;"/><br/>
+      <b>@chenhb23</b><br/>
+      <sub>lanzouyun-disk</sub><br/>
+      <a href="https://github.com/chenhb23/lanzouyun-disk">项目链接</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/rachpt.png" width="100" height="100" style="border-radius: 50%; border: 3px solid #2196F3;"/><br/>
+      <b>@rachpt</b><br/>
+      <sub>lanzou-gui</sub><br/>
+      <a href="https://github.com/rachpt/lanzou-gui">项目链接</a>
+    </td>
+    <td align="center">
+      <img src="https://github.com/hanximeng.png" width="100" height="100" style="border-radius: 50%; border: 3px solid #FF9800;"/><br/>
+      <b>@hanximeng</b><br/>
+      <sub>LanzouAPI</sub><br/>
+      <a href="https://github.com/hanximeng/LanzouAPI">项目链接</a>
+    </td>
+  </tr>
+</table>
 
-2. **lanzou-gui**
-   - 项目地址：https://github.com/rachpt/lanzou-gui
-   - 作者：<img src="https://github.com/rachpt.png" width="20" height="20" align="absmiddle" /> [@rachpt](https://github.com/rachpt)
-   - 参考内容：提供了 GUI 实现的思路和一些核心原理，包括界面布局和文件管理逻辑
+### 📚 参考内容说明
 
-3. **LanzouAPI**
-   - 项目地址：https://github.com/hanximeng/LanzouAPI
-   - 作者：<img src="https://github.com/hanximeng.png" width="20" height="20" align="absmiddle" /> [@hanximeng](https://github.com/hanximeng)
-   - 参考内容：借鉴了直链解析方法，并根据最新规则进行了更新和优化
+| 参考项目 | 作者 | 主要贡献 |
+|----------|------|----------|
+| **lanzouyun-disk** | [@chenhb23](https://github.com/chenhb23) | 学习了蓝奏云的 Web交互原理，包括 API 调用方式和请求参数构造 |
+| **lanzou-gui** | [@rachpt](https://github.com/rachpt) | 提供了 GUI实现的思路和一些核心原理，包括界面布局和文件管理逻辑 |
+| **LanzouAPI** | [@hanximeng](https://github.com/hanximeng) | 借鉴了直链解析方法，并根据最新规则进行了更新和优化 |
 
-### 特别感谢
+### ✨ 原创性改进
 
-- **蓝奏云** - 提供的云存储服务
-- **Playwright** - 浏览器自动化工具，用于处理滑动验证码
-- **@chenhb23、@rachpt、@hanximeng** - 感谢各位开源作者的优秀项目和技术分享
+在参考上述优秀项目的基础上，本项目进行了以下创新和改进：
 
-### 声明
+- 🔧 **重构路径导航系统** - 使用路径历史记录机制，实现完整的返回上一级功能
+- 🛡️ **添加防误操作机制** - 文件夹下载保护、删除确认等安全机制
+- 🚀 **优化登录流程** - 支持密码错误即时检测和自动登录
+- 📂 **目录层级管理** - 实现历史记录功能和目录层级限制提醒
+- 📤 **改进文件上传** - 支持在当前文件夹直接上传，无需切换目录
+- ⚠️ **完善错误处理** - 提供友好的用户提示和异常处理机制
 
-1. 本项目在参考上述开源项目的基础上，进行了以下**原创性改进**：
-   - 重构路径导航系统，使用路径历史记录机制，实现完整的返回上一级功能
-   - 添加文件夹下载保护和防误操作机制
-   - 优化登录流程，支持密码错误即时检测和自动登录
-   - 实现目录层级管理和历史记录功能
-   - 改进文件上传逻辑，支持在当前文件夹直接上传
-   - 完善错误处理机制，提供友好的用户提示
+### 📜 声明
 
-2. 本项目严格遵守各参考项目的开源许可证（MIT/Apache-2.0 等）
-
-3. 本项目为**非官方工具**，仅供学习和个人合法使用
+1. 本项目严格遵守各参考项目的开源许可证（MIT/Apache-2.0 等）
+2. 本项目为**非官方工具**，仅供学习和个人合法使用
+3. 如有任何侵权问题，请联系删除
 
 ## 📮 联系方式
 - 项目地址：[GitHub](https://github.com/94kkandkk/LanzouGUI-Py)
