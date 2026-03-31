@@ -218,17 +218,17 @@ MIT License
 
 1. **lanzouyun-disk**
    - 项目地址：https://github.com/chenhb23/lanzouyun-disk
-   - 作者：@chenhb23 (https://github.com/chenhb23)
+   - 作者：<img src="https://github.com/chenhb23.png" width="20" height="20" align="absmiddle" /> [@chenhb23](https://github.com/chenhb23)
    - 参考内容：学习了蓝奏云的 Web 交互原理，包括 API 调用方式和请求参数构造
 
 2. **lanzou-gui**
    - 项目地址：https://github.com/rachpt/lanzou-gui
-   - 作者：@rachpt (https://github.com/rachpt)
+   - 作者：<img src="https://github.com/rachpt.png" width="20" height="20" align="absmiddle" /> [@rachpt](https://github.com/rachpt)
    - 参考内容：提供了 GUI 实现的思路和一些核心原理，包括界面布局和文件管理逻辑
 
 3. **LanzouAPI**
    - 项目地址：https://github.com/hanximeng/LanzouAPI
-   - 作者：@hanximeng (https://github.com/hanximeng)
+   - 作者：<img src="https://github.com/hanximeng.png" width="20" height="20" align="absmiddle" /> [@hanximeng](https://github.com/hanximeng)
    - 参考内容：借鉴了直链解析方法，并根据最新规则进行了更新和优化
 
 ### 特别感谢
