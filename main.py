@@ -94,15 +94,46 @@ class LanzouEdgeAutoLogin:
             print(f"❌ 模拟滑动失败: {str(e)}")
             return False
     
+    def __init__(self):
+        self.cookie = None
+        self.session = requests.Session()
+        self.base_url = "https://pc.woozooo.com"
+        self.upload_file_counter = 0
+        self.login_status_callback = None  # 登录状态回调函数
+        
+        # 尝试从文件加载Cookie
+        try:
+            with open("lanzou_cookies.txt", "r") as f:
+                content = f.read()
+                self.cookie = eval(content)
+                # 确保cookie是列表格式
+                if not isinstance(self.cookie, list):
+                    print("⚠️ Cookie格式错误，将使用浏览器登录")
+                    self.cookie = None
+                else:
+                    print("✅ 从文件加载Cookie成功")
+        except:
+            print("⚠️ 未找到Cookie文件，将使用浏览器登录")
+    
+    def set_login_status_callback(self, callback):
+        """设置登录状态回调函数"""
+        self.login_status_callback = callback
+    
+    def _update_login_status(self, status):
+        """更新登录状态"""
+        print(status)
+        if self.login_status_callback:
+            self.login_status_callback(status)
+    
     def get_cookie_with_edge(self, username=None, password=None):
         """【核心】自动调用Edge浏览器，登录并抓取Cookie"""
-        print("🔐 正在启动系统Edge浏览器，自动登录蓝奏云...")
+        self._update_login_status("🔐 正在启动系统Edge浏览器，自动登录蓝奏云...")
 
         # 调用 Windows 原生 Edge 浏览器
         with sync_playwright() as p:
             # headless=True = 后台隐形运行（不弹出窗口，和挂载工具一样）
             browser = p.chromium.launch(
-                headless=True,  # 无头模式，后台运行
+                headless=False,  # 无头模式，后台运行
                 channel="msedge",
                 args=[
                     "--disable-blink-features=AutomationControlled",
@@ -117,53 +148,65 @@ class LanzouEdgeAutoLogin:
 
             # 访问蓝奏云官方登录页
             page.goto("https://up.woozooo.com/account.php?action=login")
-            time.sleep(5)  # 增加等待时间，确保页面完全加载
-            
+            time.sleep(3)  # 等待页面加载
+                        
             # 绕过自动化检测
             page.evaluate("() => { Object.defineProperty(navigator, 'webdriver', { get: () => undefined }); }")
             page.evaluate("() => { delete navigator.__proto__.webdriver; }")
             page.evaluate("() => { window.chrome = { runtime: {} }; }")
             page.evaluate("() => { Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN', 'zh', 'en'] }); }")
             page.evaluate("() => { Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] }); }")
-            
+                        
             # 检查是否需要刷新页面
             try:
                 if page.locator('text=哎呀，出错了，点击刷新再来一次').is_visible():
-                    print("⚠️ 页面出错，正在刷新...")
+                    self._update_login_status("⚠️ 页面出错，正在刷新...")
                     page.reload()
                     time.sleep(3)
             except:
-                print("⚠️ 页面检查失败，继续执行")
-
-            # 输入账号密码
+                self._update_login_status("⚠️ 页面检查失败，继续执行")
+                        
+            # 输入账号密码 - 等待登录按钮出现后再输入
             if username and password:
-                print("📝 正在自动输入账号密码...")
+                self._update_login_status("📝 等待登录按钮出现...")
                 try:
+                    # 等待登录按钮出现（最多等待 30 秒）
+                    login_button_locator = page.locator("input#s3.btn[type='submit']")
+                    login_button_locator.wait_for(state='visible', timeout=30000)
+                    self._update_login_status("✅ 登录按钮已出现，开始输入账号密码...")
+                    time.sleep(1)  # 稍微等待确保按钮完全可交互
+                
                     # 输入用户名
                     username_input = page.locator("input[name='username']")
                     if username_input.is_visible():
+                        # 先清空输入框
+                        username_input.fill('')
+                        time.sleep(0.5)
                         # 模拟人类输入（逐字输入）
                         for char in username:
                             username_input.type(char)
                             time.sleep(random.uniform(0.05, 0.15))
-                        
+                    
                     # 输入密码
                     password_input = page.locator("input[name='password']")
                     if password_input.is_visible():
+                        # 先清空输入框
+                        password_input.fill('')
+                        time.sleep(0.5)
                         # 模拟人类输入（逐字输入）
                         for char in password:
                             password_input.type(char)
                             time.sleep(random.uniform(0.05, 0.15))
                 except Exception as e:
-                    print(f"❌ 输入账号密码失败: {str(e)}")
+                    self._update_login_status(f"❌ 输入账号密码失败：{str(e)}")
                     browser.close()
                     return None
                 
                 # 处理滑动验证码
-                print("🔍 正在检测滑动验证码...")
+                self._update_login_status("🔍 正在检测滑动验证码...")
                 try:
                     # 等待滑动验证码出现
-                    time.sleep(3)
+                    time.sleep(2)
                     
                     # 查找滑块元素（支持多种类型的滑动验证码）
                     slider_handle = None
@@ -179,7 +222,7 @@ class LanzouEdgeAutoLogin:
                         slider_handle = page.locator("#nc_1_n1z")
                         # 计算滑动距离
                         slide_distance = random.randint(280, 320)  # 网易云滑动验证码距离通常更长
-                        print("✅ 发现网易云滑动验证码")
+                        self._update_login_status("✅ 发现网易云滑动验证码")
                     # 查找其他类型的滑动验证码
                     elif page.locator(".slider-handle, .drag-handle, .slide-btn").is_visible():
                         slider_handle = page.locator(".slider-handle, .drag-handle, .slide-btn").first
@@ -187,10 +230,11 @@ class LanzouEdgeAutoLogin:
                         slide_distance = random.randint(150, 200)
                     
                     if slider_handle and slide_distance > 0:
-                        print("✅ 发现滑动验证码")
+                        self._update_login_status("✅ 发现滑动验证码")
                         
                         # 模拟人类滑动
                         success = self.simulate_human_slide(page, slider_handle, slide_distance)
+                        self._update_login_status(f"✅ 模拟人类滑动完成，距离: {slide_distance}px")
                         
                         # 等待验证结果
                         time.sleep(3)
@@ -200,95 +244,109 @@ class LanzouEdgeAutoLogin:
                         
                         # 检查方式1：滑块是否消失
                         if not slider_handle.is_visible():
-                            print("✅ 滑动验证成功！滑块已消失")
+                            self._update_login_status("✅ 滑动验证成功！滑块已消失")
                             verification_success = True
                         
                         # 检查方式2：滑块是否显示成功状态（网易云滑动验证码）
                         try:
                             slider_class = slider_handle.get_attribute("class")
                             if "btn_ok" in slider_class:
-                                print("✅ 滑动验证成功！滑块显示成功状态")
+                                self._update_login_status("✅ 滑动验证成功！滑块显示成功状态")
                                 verification_success = True
                             
                             # 检查是否显示验证通过文本
                             success_text = page.locator(".nc-lang-cnt[data-nc-lang='_yesTEXT']")
                             if success_text.is_visible():
-                                print("✅ 滑动验证成功！显示验证通过文本")
+                                self._update_login_status("✅ 滑动验证成功！显示验证通过文本")
                                 verification_success = True
                         except:
                             pass
                         
                         # 如果验证失败，尝试再次滑动
                         if not verification_success:
-                            print("⚠️ 滑动验证可能失败，正在检查...")
+                            self._update_login_status("⚠️ 滑动验证可能失败，正在检查...")
                             # 检查是否需要重新滑动
                             if slider_handle.is_visible():
-                                print("⚠️ 滑动验证失败，尝试再次滑动...")
+                                self._update_login_status("⚠️ 滑动验证失败，尝试再次滑动...")
                                 # 再次尝试滑动，调整距离
                                 slide_distance = random.randint(slide_distance - 10, slide_distance + 10)
                                 success = self.simulate_human_slide(page, slider_handle, slide_distance)
+                                self._update_login_status(f"✅ 第二次模拟人类滑动完成，距离: {slide_distance}px")
                                 time.sleep(3)
                                 
                                 # 再次检查验证是否成功
                                 try:
                                     slider_class = slider_handle.get_attribute("class")
                                     if "btn_ok" in slider_class:
-                                        print("✅ 第二次滑动验证成功！")
+                                        self._update_login_status("✅ 第二次滑动验证成功！")
                                         verification_success = True
                                     
                                     success_text = page.locator(".nc-lang-cnt[data-nc-lang='_yesTEXT']")
                                     if success_text.is_visible():
-                                        print("✅ 第二次滑动验证成功！")
+                                        self._update_login_status("✅ 第二次滑动验证成功！")
                                         verification_success = True
                                 except:
                                     pass
                         
                         if verification_success:
-                            print("✅ 滑动验证最终成功！")
+                            self._update_login_status("✅ 滑动验证最终成功！")
                         else:
-                            print("❌ 滑动验证失败，可能需要手动验证")
+                            self._update_login_status("❌ 滑动验证失败，可能需要手动验证")
                             browser.close()
                             return None
                     
                     else:
-                        print("⚠️ 未发现滑动验证码，可能已经通过验证")
+                        self._update_login_status("⚠️ 未发现滑动验证码，可能已经通过验证")
                     
                 except Exception as e:
-                    print(f"❌ 处理滑动验证码失败: {str(e)}")
+                    self._update_login_status(f"❌ 处理滑动验证码失败: {str(e)}")
                     browser.close()
                     return None
                 
                 # 点击登录按钮
                 try:
-                    login_button = page.locator("input[type='submit']")
+                    login_button = page.locator("input#s3.btn[type='submit']")
                     if login_button.is_visible():
-                        print("🔐 正在点击登录按钮...")
+                        self._update_login_status("🔐 正在点击登录按钮...")
                         login_button.click()
-                        time.sleep(2)  # 等待登录请求
+                        time.sleep(3)  # 等待登录请求和响应
+                                        
+                        # 检查是否出现密码错误提示
+                        try:
+                            error_message = page.locator("text=密码错误！注意：无法识别浏览器自动保存的密码")
+                            if error_message.is_visible(timeout=5000):
+                                self._update_login_status("❌ 密码错误！请检查账号密码是否正确")
+                                print("⚠️ 检测到密码错误提示")
+                                # 关闭浏览器，返回 None 表示登录失败
+                                browser.close()
+                                return None
+                        except:
+                            # 没有出现密码错误提示，继续
+                            pass
                     else:
-                        print("❌ 未找到登录按钮")
+                        self._update_login_status("❌ 未找到登录按钮")
                         browser.close()
                         return None
                 except Exception as e:
-                    print(f"❌ 点击登录按钮失败: {str(e)}")
+                    self._update_login_status(f"❌ 点击登录按钮失败：{str(e)}")
                     browser.close()
                     return None
             else:
                 # 等待用户手动输入账号密码和完成滑动验证
-                print("⚠️ 请在打开的浏览器中手动输入账号密码并完成滑动验证，然后点击登录按钮...")
+                self._update_login_status("⚠️ 请在打开的浏览器中手动输入账号密码并完成滑动验证，然后点击登录按钮...")
 
             # 等待页面跳转，超时300秒
             try:
                 page.wait_for_url("https://up.woozooo.com/mydisk.php", timeout=300000)
-                print("✅ 登录成功！页面已跳转")
+                self._update_login_status("✅ 登录成功！页面已跳转")
             except Exception as e:
-                print(f"❌ 登录失败，页面未跳转: {str(e)}")
+                self._update_login_status(f"❌ 登录失败，页面未跳转: {str(e)}")
                 browser.close()
                 return None
 
             # 自动提取登录后的Cookie（挂载工具核心步骤）
             browser_cookies = page.context.cookies()
-            print("📋 获取到的Cookie：", browser_cookies)
+            self._update_login_status(f"📋 获取到的Cookie：{browser_cookies}")
             browser.close()
 
         # 筛选蓝奏云必备的Cookie并保存为列表格式
@@ -342,38 +400,14 @@ class LanzouEdgeAutoLogin:
         resp = self.session.get(f"{self.base_url}/mydisk.php")
         if resp.status_code == 200:
             print(f"✅ Cookie有效，登录状态正常")
-            # 提取vei参数
-            self.vei = self._extract_vei(resp.text)
-            if self.vei:
-                print(f"✅ 成功提取vei参数: {self.vei}")
-            else:
-                print(f"⚠️ 无法提取vei参数，使用默认值")
-                self.vei = "V1NTUVVWBwsHBVJWWVI%3D"
+            # 直接使用预设的 vei 参数
+            self.vei = "V1NTUVVWBwsHBVJWWVI%3D"
+            print(f"✅ vei 参数已设置：{self.vei}")
             return True
         else:
             print(f"❌ Cookie无效，登录状态失效")
             return False
     
-    def _extract_vei(self, html):
-        """从HTML中提取vei参数"""
-        import re
-        # 查找vei参数
-        match = re.search(r"'vei':'([^']+)'", html)
-        if match:
-            return match.group(1)
-        # 尝试另一种格式
-        match = re.search(r"vei=([^&]+)", html)
-        if match:
-            return match.group(1)
-        # 尝试从folder函数调用中提取
-        match = re.search(r"folder\(folder_id\);.*?'vei':'([^']+)',", html, re.DOTALL)
-        if match:
-            return match.group(1)
-        # 尝试从more函数调用中提取
-        match = re.search(r"more\(folder_id\);.*?'vei':'([^']+)',", html, re.DOTALL)
-        if match:
-            return match.group(1)
-        return None
 
     def get_file_list(self, folder_id=None):
         """获取文件和文件夹列表"""
@@ -442,25 +476,6 @@ class LanzouEdgeAutoLogin:
             print(f"文件列表请求状态码: {file_resp.status_code}")
             return None
     
-    def create_folder(self, folder_name, parent_id="0"):
-        """创建文件夹"""
-        # 从cookie中获取当前文件夹ID
-        folder_id = "0"
-        for cookie in self.cookie:
-            if cookie['name'] == 'folder_id_c':
-                folder_id = cookie['value']
-                break
-        
-        resp = self.session.post(
-            f"{self.base_url}/doupload.php",
-            data={"task": "2", "parent_id": folder_id, "folder_name": folder_name, "folder_description": ""}
-        )
-        if resp.status_code == 200:
-            print(f"✅ 文件夹 {folder_name} 创建成功")
-            return True
-        else:
-            print(f"❌ 文件夹 {folder_name} 创建失败")
-            return False
     
     def delete_file(self, file_id):
         """删除文件"""
@@ -492,10 +507,27 @@ class LanzouEdgeAutoLogin:
             }
         )
         if resp.status_code == 200:
-            print(f"✅ 文件夹 {folder_id} 删除成功")
-            return True
+            try:
+                result = resp.json()
+                print(f"📁 删除文件夹响应内容：{result}")
+                if isinstance(result, dict):
+                    # 检查是否删除成功
+                    if result.get('zt') == 1:
+                        print(f"✅ 文件夹 {folder_id} 删除成功")
+                        return True
+                    else:
+                        # 删除失败，检查具体原因
+                        error_info = result.get('info', '')
+                        if '含有子文件夹' in error_info or '无法删除' in error_info:
+                            print(f"❌ 蓝奏云限制：{error_info}")
+                        else:
+                            print(f"❌ 删除失败：{error_info}")
+                        return None
+            except Exception as e:
+                print(f"❌ 解析删除文件夹响应失败：{str(e)}")
+                return False
         else:
-            print(f"❌ 文件夹 {folder_id} 删除失败")
+            print(f"❌ 文件夹 {folder_id} 删除失败，状态码：{resp.status_code}")
             return False
     
     def upload_file(self, file_path, max_retries=3, split_size=10*1024*1024, folder_id=None):
@@ -770,6 +802,14 @@ class LanzouEdgeAutoLogin:
                         if folder_id:
                             print(f"✅ 文件夹 {folder_name} 创建成功，ID: {folder_id}")
                             return folder_id
+                    else:
+                        # 创建失败，检查具体原因
+                        error_info = result.get('info', '')
+                        if '不能创建超过 4 级目录' in error_info or '超过 4 级' in error_info:
+                            print(f"❌ 蓝奏云限制：无法创建超过 4 级的目录")
+                        else:
+                            print(f"❌ 创建失败：{error_info}")
+                        return None
             except Exception as e:
                 print(f"❌ 解析创建文件夹响应失败: {str(e)}")
             
@@ -789,11 +829,11 @@ class LanzouEdgeAutoLogin:
             except Exception as e:
                 print(f"❌ 查找文件夹ID失败: {str(e)}")
             
-            # 如果仍然无法获取文件夹ID，返回True表示创建成功
+            # 如果仍然无法获取文件夹 ID，返回 True 表示创建成功
             print(f"✅ 文件夹 {folder_name} 创建成功")
             return True
         else:
-            print(f"❌ 文件夹 {folder_name} 创建失败")
+            print(f"❌ 文件夹 {folder_name} 创建失败，状态码：{resp.status_code}")
             return False
     
     def recover_file(self, folder_id, save_path):
@@ -1199,15 +1239,13 @@ if __name__ == "__main__":
     # 尝试使用Cookie登录
     if lz.cookie:
         if lz.init_api():
-            # 启动GUI界面
-            print("🚀 启动蓝奏云文件管理器界面...")
-            from ui import LanzouUI
-            LanzouUI(lz)
+            print("✅ Cookie有效，登录状态正常")
         else:
-            # Cookie无效，使用浏览器登录
-            lz.get_cookie_with_edge()
-            if lz.init_api():
-                # 登录成功后启动GUI界面
-                print("🚀 启动蓝奏云文件管理器界面...")
-                from ui import LanzouUI
-                LanzouUI(lz)
+            print("⚠️ Cookie无效，需要重新登录")
+    else:
+        print("⚠️ 未检测到Cookie，需要登录")
+    
+    # 无论是否有Cookie，都启动GUI界面
+    print("🚀 启动蓝奏云文件管理器界面...")
+    from ui import LanzouUI
+    LanzouUI(lz)
